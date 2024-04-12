@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ChefByte Inventory</title>
+    <style>
+        button {
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Current Stock</h1>
+    <table id="stockTable">
+        <tr>
+            <th>Item Name</th>
+            <th>Quantity</th>
+            <th>Expiration Date</th>
+            <th>Actions</th>  <!-- Additional header for actions like edit and delete -->
+        </tr>
+        <!-- Stock items will be added here dynamically -->
+    </table>
+
+    <h2>Add New Stock Item</h2>
+    <form id="addStockForm">
+        <input type="text" id="itemName" placeholder="Item Name" required>
+        <input type="number" id="itemQuantity" placeholder="Quantity" required>
+        <input type="date" id="itemExpirationDate" placeholder="Expiration Date">
+        <button type="submit">Add Stock</button>
+    </form>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
