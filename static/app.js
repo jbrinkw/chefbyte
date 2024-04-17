@@ -116,4 +116,85 @@ function cancelEdit(row, item) {
     const actionsCell = row.cells[3];
     actionsCell.innerHTML = '';
     actionsCell.appendChild(createEditButton(row, item));
-    actionsCell.appendChild(createDelete
+    actionsCell.appendChild(createDeleteButton(item.id));
+}
+
+// Function to update an item
+function updateStock(row, itemId) {
+    // Get updated values from input fields
+    const newName = row.cells[0].querySelector('input').value;
+    const newQuantity = row.cells[1].querySelector('input').value;
+    const newExpirationDate = row.cells[2].querySelector('input').value;
+
+    // Prepare data for API request
+    const data = {
+        item_name: newName,
+        quantity: parseInt(newQuantity, 10),
+        expiration_date: newExpirationDate
+    };
+
+    // API call to update the item
+    fetch(`/inventory/${itemId}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Success:', data);
+        fetchStock(); // Reload stock items to reflect changes
+    })
+    .catch((error) => {
+        console.error('Error:', error);
+    });
+}
+
+// Function to add a new stock item
+function addStock() {
+    // Get values from form inputs
+    const itemName = document.getElementById('itemName').value;
+    const itemQuantity = document.getElementById('itemQuantity').value;
+    const itemExpirationDate = document.getElementById('itemExpirationDate').value;
+
+    // Prepare data for API request
+    const data = { 
+        item_name: itemName, 
+        quantity: itemQuantity, 
+        expiration_date: itemExpirationDate 
+    };
+
+    // API call to add a new item
+    fetch('/inventory', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Success:', data);
+        fetchStock(); // Reload stock items to include the new item
+    })
+    .catch((error) => {
+        console.error('Error:', error);
+    });
+}
+
+// Function to delete an item
+function deleteStock(itemId) {
+    // API call to delete the item
+    fetch(`/inventory/${itemId}`, {
+        method: 'DELETE',
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Success:', data);
+        fetchStock(); // Reload stock items to reflect the deletion
+    })
+    .catch((error) => {
+        console.error('Error:', error);
+    });
+}
