@@ -14,49 +14,55 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-// Function to start barcode scanning with Quagga
 function startBarcodeScanner() {
     var barcodeScannerDiv = document.getElementById('barcodeScanner');
     barcodeScannerDiv.style.display = 'block'; // Show the barcode scanner div
 
-    // Check if navigator.mediaDevices is supported
-    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        // Use the native getUserMedia API to stream video
-        navigator.mediaDevices.getUserMedia({ video: true }).then(function(stream) {
-            // Display the video stream in the video element
-            document.getElementById('barcodeVideo').srcObject = stream;
-            
-            // Initialize Quagga with the live stream
-            Quagga.init({
-                inputStream: {
-                    name: "Live",
-                    type: "LiveStream",
-                    target: document.getElementById('barcodeVideo') // Use the video element for Quagga
-                },
-                decoder: {
-                    readers: ["ean_reader"]
-                }
-            }, function(err) {
-                if (err) {
-                    console.error("Error initializing Quagga:", err);
-                    return;
-                }
-                Quagga.start(); // Start barcode scanning
-            });
-            
-            Quagga.onDetected(function(result) {
-                console.log("Barcode detected:", result);
-                const code = result.codeResult.code;
-                fetchItemFromOpenFoodFacts(code);
-                Quagga.stop(); // Stop barcode scanning
-                stream.getTracks().forEach(track => track.stop()); // Stop the video stream
-                barcodeScannerDiv.style.display = 'none'; // Hide the barcode scanner div
-            });
-        }).catch(function(err) {
-            console.error("Error accessing the camera:", err);
+    // Define constraints for the video stream
+    var constraints = {
+        video: {
+            facingMode: "environment" // This attempts to select the rear camera on mobile devices
+        }
+    };
+
+    // Use the native getUserMedia API to stream video with constraints
+    navigator.mediaDevices.getUserMedia(constraints).then(function(stream) {
+        // Display the video stream in the video element
+        var videoElement = document.getElementById('barcodeVideo');
+        videoElement.srcObject = stream;
+
+        // Initialize Quagga with the live stream
+        Quagga.init({
+            inputStream: {
+                name: "Live",
+                type: "LiveStream",
+                target: videoElement // Use the video element for Quagga
+            },
+            decoder: {
+                readers: ["ean_reader"]
+            }
+        }, function(err) {
+            if (err) {
+                console.error("Error initializing Quagga:", err);
+                return;
+            }
+            Quagga.start(); // Start barcode scanning
         });
-    }
+
+        Quagga.onDetected(function(result) {
+            console.log("Barcode detected:", result);
+            const code = result.codeResult.code;
+            fetchItemFromOpenFoodFacts(code);
+            Quagga.stop(); // Stop barcode scanning
+            stream.getTracks().forEach(track => track.stop()); // Stop the video stream
+            barcodeScannerDiv.style.display = 'none'; // Hide the barcode scanner div
+        });
+    }).catch(function(err) {
+        console.error("Error accessing the camera:", err);
+        alert('Could not access the camera. Please ensure it is not being used by another application.');
+    });
 }
+
 
 
 

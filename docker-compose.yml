@@ -4,7 +4,7 @@ services:
   web:
     build: .
     ports:
-      - "80:5000"
+      - "443:443"  # Map HTTPS port 443 on the host to port 443 in the container
     environment:
       - FLASK_APP=app.py
       - FLASK_DEBUG=1  # Enable debug mode
@@ -12,6 +12,8 @@ services:
       - DATABASE_URL=${DATABASE_URL}
     depends_on:
       - db
+    command: >  # Command to run Gunicorn with SSL
+      gunicorn --certfile=/usr/src/app/selfsigned.crt --keyfile=/usr/src/app/selfsigned.key -b 0.0.0.0:443 app:app
 
   db:
     image: postgres:14
