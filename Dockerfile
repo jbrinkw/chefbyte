@@ -14,8 +14,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 RUN pip install gunicorn
 
 # Copy SSL certificates
-COPY selfsigned.crt /usr/src/app/selfsigned.crt
-COPY selfsigned.key /usr/src/app/selfsigned.key
+COPY yourdomain.crt /etc/ssl/certs/yourdomain.crt
+COPY yourdomain.key /etc/ssl/private/yourdomain.key
+
 
 # Expose port 443 for SSL traffic
 EXPOSE 443

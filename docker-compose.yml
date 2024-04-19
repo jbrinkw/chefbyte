@@ -5,6 +5,10 @@ services:
     build: .
     ports:
       - "443:443"  # Map HTTPS port 443 on the host to port 443 in the container
+    volumes:
+      - ./yourdomain.crt:/usr/src/app/yourdomain.crt
+      - ./yourdomain.key:/usr/src/app/yourdomain.key
+      - .:/usr/src/app  # Assuming you might also want to mount the application code
     environment:
       - FLASK_APP=app.py
       - FLASK_DEBUG=1  # Enable debug mode
@@ -13,7 +17,7 @@ services:
     depends_on:
       - db
     command: >  # Command to run Gunicorn with SSL
-      gunicorn --certfile=/usr/src/app/selfsigned.crt --keyfile=/usr/src/app/selfsigned.key -b 0.0.0.0:443 app:app
+      gunicorn --certfile=/usr/src/app/yourdomain.crt --keyfile=/usr/src/app/yourdomain.key -b 0.0.0.0:443 app:app
 
   db:
     image: postgres:14
