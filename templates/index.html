@@ -23,6 +23,13 @@
     </style>
 </head>
 <body>
+    <h1>Add New Stock Item</h1>
+    <form id="addStockForm">
+        <input type="text" id="itemName" placeholder="Item Name" required>
+        <input type="number" id="itemQuantity" placeholder="Quantity" required>
+        <input type="date" id="itemExpirationDate" placeholder="Expiration Date">
+        <button type="submit">Add Stock</button>
+    </form>
     <h1>Current Stock</h1>
     
     <table id="stockTable">
@@ -36,18 +43,11 @@
     </table>
 
     <button id="scanBarcode">Scan Barcode</button>
+    <button id="cancelScan">Cancel Scan</button>
 
     <div id="barcodeScanner">
         <video id="barcodeVideo" autoplay playsinline></video>
     </div>
-
-    <h2>Add New Stock Item</h2>
-    <form id="addStockForm">
-        <input type="text" id="itemName" placeholder="Item Name" required>
-        <input type="number" id="itemQuantity" placeholder="Quantity" required>
-        <input type="date" id="itemExpirationDate" placeholder="Expiration Date">
-        <button type="submit">Add Stock</button>
-    </form>
 
     <script src="/static/app.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>

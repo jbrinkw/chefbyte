@@ -14,29 +14,54 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
+// Global variables to store the last barcode and the last scan timestamp
+let lastBarcode = null;
+let lastScanTime = 0;
+
+// Debounce function to prevent processing the same barcode multiple times rapidly
+function debounceBarcodeScan(barcode, processFunction, interval) {
+    const now = Date.now();
+
+    if (barcode !== lastBarcode || now - lastScanTime > interval) {
+        lastBarcode = barcode;
+        lastScanTime = now;
+        processFunction(barcode); // Process the barcode using the provided function
+    } else {
+        console.log('Duplicate scan ignored'); // Log or handle duplicates quietly
+    }
+}
+
+
+var stream; // Global variable to store the stream
+
+// Add an event listener to the "Cancel Scan" button to stop the stream
+document.getElementById('cancelScan').addEventListener('click', function() {
+    if (stream) {
+        stream.getTracks().forEach(function(track) {
+            track.stop();
+        });
+    }
+});
+
+// Function to start barcode scanning with Quagga
 function startBarcodeScanner() {
     var barcodeScannerDiv = document.getElementById('barcodeScanner');
     barcodeScannerDiv.style.display = 'block'; // Show the barcode scanner div
 
-    // Define constraints for the video stream
     var constraints = {
-        video: {
-            facingMode: "environment" // This attempts to select the rear camera on mobile devices
-        }
+        video: { facingMode: "environment" }
     };
 
-    // Use the native getUserMedia API to stream video with constraints
-    navigator.mediaDevices.getUserMedia(constraints).then(function(stream) {
-        // Display the video stream in the video element
+    navigator.mediaDevices.getUserMedia(constraints).then(function(mediaStream) {
         var videoElement = document.getElementById('barcodeVideo');
-        videoElement.srcObject = stream;
+        videoElement.srcObject = mediaStream;
+        stream = mediaStream; // Store the stream globally
 
-        // Initialize Quagga with the live stream
         Quagga.init({
             inputStream: {
                 name: "Live",
                 type: "LiveStream",
-                target: videoElement // Use the video element for Quagga
+                target: videoElement
             },
             decoder: {
                 readers: ["ean_reader"]
@@ -46,48 +71,56 @@ function startBarcodeScanner() {
                 console.error("Error initializing Quagga:", err);
                 return;
             }
-            Quagga.start(); // Start barcode scanning
+            Quagga.start();
         });
 
         Quagga.onDetected(function(result) {
-            console.log("Barcode detected:", result);
-            const code = result.codeResult.code;
-            fetchItemFromOpenFoodFacts(code);
-            Quagga.stop(); // Stop barcode scanning
-            stream.getTracks().forEach(track => track.stop()); // Stop the video stream
-            barcodeScannerDiv.style.display = 'none'; // Hide the barcode scanner div
+            console.log("Detection:", result);
+            Quagga.stop(); // Stop barcode scanning immediately
+            stopStream(); // Stop the camera stream immediately
+            barcodeScannerDiv.style.display = 'none'; // Hide the scanner div
+
+            // Use debounce function to process the barcode
+            debounceBarcodeScan(result.codeResult.code, processDetectedBarcode, 1000); // 1000 ms debounce interval
         });
     }).catch(function(err) {
         console.error("Error accessing the camera:", err);
-        alert('Could not access the camera. Please ensure it is not being used by another application.');
     });
 }
 
+function stopStream() {
+    if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        stream = null; // Clear the global stream reference
+    }
+}
 
+function processDetectedBarcode(barcode) {
+    console.log("Barcode detected:", barcode);
+    fetchItemFromOpenFoodFacts(barcode);
+}
 
 
 function fetchItemFromOpenFoodFacts(barcode) {
     fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`)
         .then(response => response.json())
         .then(data => {
-            if (data.status === 1) { // Check if the item exists in OpenFoodFacts
+            if (data.status === 1) {
                 const product = data.product;
                 const itemName = product.product_name;
-                const quantity = 1; // Default quantity to 1; modify as needed
-                const expirationDate = ''; // No expiration date from OpenFoodFacts; modify as needed
-                addStockFromBarcode(itemName, quantity, expirationDate); // Add the item to inventory
-                Quagga.stop(); // Stop the barcode scanner
-                document.getElementById('barcodeScanner').style.display = 'none'; // Hide the video feed
+                const quantity = 1;
+                const expirationDate = ''; // Handle as needed
+                addStockFromBarcode(itemName, quantity, expirationDate);
             } else {
-                alert(`No product found for barcode: ${barcode}`); // Show error if no product found
-                Quagga.stop();
-                document.getElementById('barcodeScanner').style.display = 'none';
+                alert("No product found for barcode: " + barcode);
             }
         })
         .catch(error => {
             console.error('Error fetching from OpenFoodFacts:', error);
         });
 }
+
+
 
 function addStockFromBarcode(itemName, quantity, expirationDate) {
     const data = {
