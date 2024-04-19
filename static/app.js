@@ -7,7 +7,107 @@ document.addEventListener('DOMContentLoaded', function() {
         e.preventDefault(); // Prevent the default form submission action
         addStock(); // Call function to add new stock item
     });
+
+    // Event listener to start barcode scanning
+    document.getElementById('scanBarcode').addEventListener('click', function() {
+        startBarcodeScanner(); // Call function to handle barcode scanning
+    });
 });
+
+// Function to start barcode scanning with Quagga
+function startBarcodeScanner() {
+    var barcodeScannerDiv = document.getElementById('barcodeScanner');
+    barcodeScannerDiv.style.display = 'block'; // Show the barcode scanner div
+
+    // Check if navigator.mediaDevices is supported
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        // Use the native getUserMedia API to stream video
+        navigator.mediaDevices.getUserMedia({ video: true }).then(function(stream) {
+            // Display the video stream in the video element
+            document.getElementById('barcodeVideo').srcObject = stream;
+            
+            // Initialize Quagga with the live stream
+            Quagga.init({
+                inputStream: {
+                    name: "Live",
+                    type: "LiveStream",
+                    target: document.getElementById('barcodeVideo') // Use the video element for Quagga
+                },
+                decoder: {
+                    readers: ["ean_reader"]
+                }
+            }, function(err) {
+                if (err) {
+                    console.error("Error initializing Quagga:", err);
+                    return;
+                }
+                Quagga.start(); // Start barcode scanning
+            });
+            
+            Quagga.onDetected(function(result) {
+                console.log("Barcode detected:", result);
+                const code = result.codeResult.code;
+                fetchItemFromOpenFoodFacts(code);
+                Quagga.stop(); // Stop barcode scanning
+                stream.getTracks().forEach(track => track.stop()); // Stop the video stream
+                barcodeScannerDiv.style.display = 'none'; // Hide the barcode scanner div
+            });
+        }).catch(function(err) {
+            console.error("Error accessing the camera:", err);
+        });
+    }
+}
+
+
+
+function fetchItemFromOpenFoodFacts(barcode) {
+    fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 1) { // Check if the item exists in OpenFoodFacts
+                const product = data.product;
+                const itemName = product.product_name;
+                const quantity = 1; // Default quantity to 1; modify as needed
+                const expirationDate = ''; // No expiration date from OpenFoodFacts; modify as needed
+                addStockFromBarcode(itemName, quantity, expirationDate); // Add the item to inventory
+                Quagga.stop(); // Stop the barcode scanner
+                document.getElementById('barcodeScanner').style.display = 'none'; // Hide the video feed
+            } else {
+                alert(`No product found for barcode: ${barcode}`); // Show error if no product found
+                Quagga.stop();
+                document.getElementById('barcodeScanner').style.display = 'none';
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching from OpenFoodFacts:', error);
+        });
+}
+
+function addStockFromBarcode(itemName, quantity, expirationDate) {
+    const data = {
+        item_name: itemName,
+        quantity: quantity,
+        expiration_date: expirationDate
+    };
+
+    // Existing function to add stock
+    fetch('/inventory', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Success:', data);
+        fetchStock(); // Reload stock items to include the new item
+    })
+    .catch((error) => {
+        console.error('Error:', error);
+    });
+}
+
 
 // Function to fetch and display existing stock items
 function fetchStock() {
