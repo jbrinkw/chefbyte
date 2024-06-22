@@ -1,3 +1,4 @@
+import os
 import streamlit as st
 import pandas as pd
 from sqlalchemy import create_engine, Column, Integer, String, Date
@@ -9,6 +10,7 @@ import base64
 
 # Configuration for SQLAlchemy
 DATABASE_URL = 'postgresql+psycopg2://myuser:mypassword@postgres/mydatabase'
+
 Base = declarative_base()
 engine = create_engine(DATABASE_URL)
 Session = sessionmaker(bind=engine)
@@ -55,7 +57,7 @@ def find_closest_match(item_name, inventory_list):
 
 # Function to send user input to LLM and get structured response
 def send_to_llm(user_input, inventory_str, debug):
-    api_key = 'sk-proj-yXOIDRxrvdPGBWtosq3CT3BlbkFJ3PmpejJQwhe4eLi0V8ok'  # Replace with your actual API key
+    api_key = os.getenv('OPENAI_API_KEY')
     headers = {
         'Content-Type': 'application/json',
         'Authorization': f'Bearer {api_key}'
@@ -93,7 +95,7 @@ def send_to_llm(user_input, inventory_str, debug):
 
 # Function to send image to LLM and get structured response
 def send_image_to_llm(image_data, inventory_str, debug):
-    api_key = 'sk-proj-yXOIDRxrvdPGBWtosq3CT3BlbkFJ3PmpejJQwhe4eLi0V8ok'  # Replace with your actual API key
+    api_key = os.getenv('OPENAI_API_KEY')
     headers = {
         "Content-Type": "application/json",
         "Authorization": f"Bearer {api_key}"
@@ -187,7 +189,7 @@ def process_llm_response(structured_list, inventory_data, debug):
 
 # Function to send user input to LLM and get recipe suggestions
 def get_recipe_suggestions(user_input, profile, inventory_str, use_inventory_only, debug):
-    api_key = 'sk-proj-yXOIDRxrvdPGBWtosq3CT3BlbkFJ3PmpejJQwhe4eLi0V8ok'  # Replace with your actual API key
+    api_key = os.getenv('OPENAI_API_KEY')
     headers = {
         'Content-Type': 'application/json',
         'Authorization': f'Bearer {api_key}'

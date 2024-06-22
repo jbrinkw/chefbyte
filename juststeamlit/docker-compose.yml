@@ -22,6 +22,7 @@ services:
       - postgres
     environment:
       DATABASE_URL: postgresql+psycopg2://myuser:mypassword@postgres/mydatabase
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
 
 volumes:
   postgres_data:
