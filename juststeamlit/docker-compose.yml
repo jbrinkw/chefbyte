@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:13
+    container_name: postgres
+    environment:
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+      POSTGRES_DB: mydatabase
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  streamlit:
+    build: .
+    container_name: streamlit
+    ports:
+      - "80:80"
+    depends_on:
+      - postgres
+    environment:
+      DATABASE_URL: postgresql+psycopg2://myuser:mypassword@postgres/mydatabase
+
+volumes:
+  postgres_data:
